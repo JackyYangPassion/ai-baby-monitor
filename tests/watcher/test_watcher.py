@@ -79,15 +79,12 @@ def test_watcher_init(mock_get_instructions_prompt):
     mock_get_instructions_prompt.return_value = "Mocked Instructions Prompt"
     instructions = ["Don't cry"]
     
-    watcher = Watcher(instructions=instructions, vllm_host="test_host", vllm_port=1234, model_name="test_model")
+    watcher = Watcher(instructions=instructions, api_key="test_key", model_name="test_model")
 
     mock_get_instructions_prompt.assert_called_once_with(instructions)
     assert watcher.instructions_prompt == "Mocked Instructions Prompt"
     assert watcher.json_schema == WatcherResponse.model_json_schema()
-    assert watcher.vllm_host == "test_host"
-    assert watcher.vllm_port == 1234
     assert watcher.model_name == "test_model"
-    assert str(watcher.client.base_url) == "http://test_host:1234/v1/"
 
 # Test for Watcher._calculate_fps
 def test_watcher_calculate_fps_valid():

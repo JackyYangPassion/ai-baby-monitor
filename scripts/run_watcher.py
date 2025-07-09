@@ -16,9 +16,6 @@ logger = structlog.get_logger()
 load_dotenv()
 REDIS_HOST = "localhost"
 REDIS_PORT = os.getenv("REDIS_PORT")
-VLLM_HOST = "localhost"
-VLLM_PORT = os.getenv("VLLM_PORT")
-LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME")
 
 
 def run_watcher(
@@ -26,8 +23,6 @@ def run_watcher(
     redis_host: str,
     redis_port: int,
     instructions: list[str],
-    vllm_host: str,
-    vllm_port: int,
     model_name: str,
     num_frames_to_process: int,
 ):
@@ -39,9 +34,7 @@ def run_watcher(
         redis_host: Redis server host.
         redis_port: Redis server port.
         instructions: List of monitoring instructions to check (from room config).
-        vllm_host: vLLM server host.
-        vllm_port: vLLM server port.
-        model_name: Model name to use for inference (from room config).
+        model_name: OpenAI model name to use for inference.
         num_frames_to_process: Number of frames to analyze in each batch.
     """
     # Initialize Redis stream handler
@@ -53,8 +46,6 @@ def run_watcher(
     # Initialize Watcher
     nanny_watcher = Watcher(
         instructions=instructions,
-        vllm_host=vllm_host,
-        vllm_port=vllm_port,
         model_name=model_name,
     )
 
@@ -67,7 +58,7 @@ def run_watcher(
         logs_queue_key=logs_key,
     )
     logger.info(
-        "Using model", model_name=model_name, vllm_host=vllm_host, vllm_port=vllm_port
+        "Using OpenAI model", model_name=model_name
     )
     logger.info("Monitoring instructions", instructions=instructions)
 
@@ -137,13 +128,15 @@ def run_watcher(
 
 
 def parse_args():
+    """Parse command line arguments for room-based configuration."""
     parser = argparse.ArgumentParser(
-        description="Run Watcher to monitor Redis stream frames based on room configuration."
+        description="Run baby monitor watcher based on room configuration."
     )
 
     parser.add_argument(
         "--config-file", required=True, help="Path to room configuration YAML file"
     )
+
     return parser.parse_args()
 
 
@@ -163,6 +156,7 @@ if __name__ == "__main__":
         redis_stream_key = room_config.name
         instructions = room_config.instructions
         num_frames_to_process = room_config.num_frames_to_process
+        model_name = "gpt-4.1-mini"  # Default OpenAI model
 
         # Ensure instructions are provided, as RoomConfig defaults to an empty list if not in YAML.
         if not instructions:
@@ -177,9 +171,7 @@ if __name__ == "__main__":
             redis_host=REDIS_HOST,
             redis_port=REDIS_PORT,
             instructions=instructions,
-            vllm_host=VLLM_HOST,
-            vllm_port=VLLM_PORT,
-            model_name=LLM_MODEL_NAME,
+            model_name=model_name,
             num_frames_to_process=num_frames_to_process,
         )
     except FileNotFoundError:
