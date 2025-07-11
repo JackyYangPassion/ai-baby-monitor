@@ -23,6 +23,8 @@ class RedisStreamHandler:
             redis_port: Redis server port
         """
         self.redis_client = redis.Redis(host=redis_host, port=redis_port)
+        # 跟踪每个stream key的最后处理ID
+        self.last_processed_ids = {}
         logger.info(
             "Initialized Redis stream handler",
             redis_host=redis_host,
@@ -132,17 +134,47 @@ class RedisStreamHandler:
         ]
 
     def get_latest_frames(self, key: str, count: int = 1) -> list[Frame]:
-        """Get the latest frames from the Redis stream."""
-        entries = self.get_latest_entries(key=key, count=count)
+        """Get the latest frames from the Redis stream that haven't been processed yet."""
+        # 获取上次处理的ID
+        last_id = self.last_processed_ids.get(key, "0-0")
+        
+        # 使用XREAD获取比last_id更新的entries
+        try:
+            # XREAD返回格式: [[stream_name, [(entry_id, fields), ...]]]
+            result = self.redis_client.xread({key: last_id}, count=count, block=0)
+            
+            if not result:
+                return []
+            
+            # 解析结果
+            stream_data = result[0][1]  # 获取entries列表
+            
+            # 反序列化帧
+            frames = []
+            latest_id = last_id
+            
+            for entry_id, data in stream_data:
+                frame = self.deserialize_frame(data)
+                if frame:
+                    frames.append(frame)
+                    latest_id = entry_id.decode('utf-8')
+            
+            # 更新最后处理的ID
+            if frames:
+                self.last_processed_ids[key] = latest_id
+                logger.debug(f"Updated last processed ID for {key}: {latest_id}")
+            
+            return frames
+            
+        except Exception as e:
+            logger.error("Error getting latest frames", error=e, key=key)
+            return []
 
-        # Deserialize the frames
-        frames = []
-        for entry_id, data in entries:
-            frame = self.deserialize_frame(data)
-            if frame:
-                frames.append(frame)
-
-        return frames
+    def reset_stream_position(self, key: str):
+        """重置指定stream的处理位置，下次将从最新位置开始读取"""
+        if key in self.last_processed_ids:
+            del self.last_processed_ids[key]
+            logger.info(f"Reset stream position for {key}")
 
     def get_latest_logs(
         self, key: str, count: int = 1, last_log_id: str | None = None

@@ -77,6 +77,9 @@ def run_watcher(
                 continue
 
             logger.info("Analyzing frames from stream", num_frames=len(frames))
+            # 输出获取的frame 元信息
+            for frame in frames:
+                logger.info("Frame metadata", frame_idx=frame.frame_idx, timestamp=frame.timestamp)
 
             # Process frames with Watcher
             result = nanny_watcher.process_frames(frames)
@@ -107,7 +110,13 @@ def run_watcher(
                 redis_handler.add_logs(logs_key, log_data)
 
                 if result["should_alert"]:
-                    playsound("assets/alert.wav")
+                    try:
+                        playsound("assets/alert.wav")
+                    except Exception as audio_error:
+                        logger.warning(
+                            "Failed to play alert sound, but alert is still triggered",
+                            audio_error=str(audio_error)
+                        )
             else:
                 error_msg = result.get("error", "Unknown error")
                 logger.error("Error processing frames", error=error_msg)
