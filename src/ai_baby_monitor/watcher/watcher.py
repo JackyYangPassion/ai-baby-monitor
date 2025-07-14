@@ -7,7 +7,7 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from ai_baby_monitor.stream import Frame
-from ai_baby_monitor.watcher import get_instructions_prompt
+from ai_baby_monitor.watcher import get_cat_monitoring_prompt,get_instructions_prompt
 
 logger = structlog.get_logger()
 
@@ -40,6 +40,8 @@ class Watcher:
             model_name: OpenAI model name to use for inference
         """
         self.instructions_prompt = get_instructions_prompt(instructions)
+        self.cat_monitoring_prompt = get_cat_monitoring_prompt()
+
         self.json_schema = WatcherResponse.model_json_schema()
         self.model_name = model_name
 
@@ -111,7 +113,7 @@ class Watcher:
 
             # Create content with multiple images for OpenAI
             content = [
-                {"type": "text", "text": self.instructions_prompt}
+                {"type": "text", "text": self.cat_monitoring_prompt}
             ]
             
             # Add each frame as a separate image
@@ -127,7 +129,7 @@ class Watcher:
             messages = [
                 {
                     "role": "system",
-                    "content": "You are a helpful assistant and baby sitter.",
+                    "content": "You are a helpful assistant and animal sitter.",
                 },
                 {
                     "role": "user",
@@ -143,6 +145,7 @@ class Watcher:
                 max_tokens=512,
                 response_format={"type": "json_object"},
             )
+            logger.info("OpenAI response", response=response)
             
             parsed_response = WatcherResponse.model_validate_json(
                 response.choices[0].message.content

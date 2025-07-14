@@ -83,6 +83,7 @@ def run_watcher(
 
             # Process frames with Watcher
             result = nanny_watcher.process_frames(frames)
+            logger.info("Watcher result", result=result)
 
             if result["success"]:
                 # Log the result
