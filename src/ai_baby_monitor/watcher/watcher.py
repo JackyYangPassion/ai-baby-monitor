@@ -29,7 +29,7 @@ class Watcher:
         self,
         instructions: list[str],
         api_key: str | None = None,
-        model_name: str = "gpt-4o-mini",
+        model_name: str = "qwen-vl-max-latest",
     ):
         """
         Initialize the Watcher with instructions and OpenAI API details.
@@ -48,6 +48,13 @@ class Watcher:
         # Initialize OpenAI client
         self.client = OpenAI(
             api_key=api_key or os.getenv("OPENAI_API_KEY"),
+        )
+
+
+        # Initialize QWen client
+        self.qwen_client = OpenAI(
+            api_key=api_key or os.getenv("QWEN_API_KEY"),
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         )
 
         logger.info(
@@ -113,7 +120,7 @@ class Watcher:
 
             # Create content with multiple images for OpenAI
             content = [
-                {"type": "text", "text": self.cat_monitoring_prompt}
+                {"type": "text", "text": self.instructions_prompt}
             ]
             
             # Add each frame as a separate image
@@ -129,7 +136,7 @@ class Watcher:
             messages = [
                 {
                     "role": "system",
-                    "content": "You are a helpful assistant and animal sitter.",
+                    "content": "You are a helpful assistant and baby sitter.",
                 },
                 {
                     "role": "user",
@@ -137,8 +144,18 @@ class Watcher:
                 },
             ]
 
-            # Send to OpenAI API
-            response = self.client.chat.completions.create(
+            # # Send to OpenAI API
+            # response = self.qwen_client.chat.completions.create(
+            #     model=self.model_name,
+            #     messages=messages,
+            #     temperature=0.1,
+            #     max_tokens=512,
+            #     response_format={"type": "json_object"},
+            # )
+
+
+            # Send to QWen API
+            response = self.qwen_client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
                 temperature=0.1,

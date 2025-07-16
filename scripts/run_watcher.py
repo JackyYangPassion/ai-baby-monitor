@@ -166,7 +166,7 @@ if __name__ == "__main__":
         redis_stream_key = room_config.name
         instructions = room_config.instructions
         num_frames_to_process = room_config.num_frames_to_process
-        model_name = "gpt-4.1-mini"  # Default OpenAI model
+        model_name = "qwen-vl-max-latest"  # Default OpenAI model
 
         # Ensure instructions are provided, as RoomConfig defaults to an empty list if not in YAML.
         if not instructions:
