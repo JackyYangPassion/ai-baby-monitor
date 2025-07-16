@@ -1,4 +1,5 @@
 import base64
+import os
 from enum import Enum
 
 import structlog
@@ -6,7 +7,7 @@ from openai import OpenAI
 from pydantic import BaseModel
 
 from ai_baby_monitor.stream import Frame
-from ai_baby_monitor.watcher import get_instructions_prompt
+from ai_baby_monitor.watcher import get_cat_monitoring_prompt,get_instructions_prompt
 
 logger = structlog.get_logger()
 
@@ -27,37 +28,38 @@ class Watcher:
     def __init__(
         self,
         instructions: list[str],
-        vllm_host: str = "localhost",
-        vllm_port: int = 8000,
-        model_name: str = "Qwen/Qwen2.5-VL-7B-Instruct-AWQ",
+        api_key: str | None = None,
+        model_name: str = "qwen-vl-max-latest",
     ):
         """
-        Initialize the Watcher with instructions and vLLM server details.
+        Initialize the Watcher with instructions and OpenAI API details.
 
         Args:
             instructions: List of monitoring instructions to check against frames
-            vllm_host: Hostname of the vLLM server
-            vllm_port: Port of the vLLM server
-            model_name: Name of the model to use for inference
+            api_key: OpenAI API key (if None, will use OPENAI_API_KEY environment variable)
+            model_name: OpenAI model name to use for inference
         """
         self.instructions_prompt = get_instructions_prompt(instructions)
-        self.json_schema = WatcherResponse.model_json_schema()
+        self.cat_monitoring_prompt = get_cat_monitoring_prompt()
 
-        self.vllm_host = vllm_host
-        self.vllm_port = vllm_port
+        self.json_schema = WatcherResponse.model_json_schema()
         self.model_name = model_name
 
-        # Initialize OpenAI client for vLLM server
+        # Initialize OpenAI client
         self.client = OpenAI(
-            api_key="EMPTY",
-            base_url=f"http://{vllm_host}:{vllm_port}/v1",
+            api_key=api_key or os.getenv("OPENAI_API_KEY"),
+        )
+
+
+        # Initialize QWen client
+        self.qwen_client = OpenAI(
+            api_key=api_key or os.getenv("QWEN_API_KEY"),
+            base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
         )
 
         logger.info(
             "Initialized Watcher",
             model_name=model_name,
-            vllm_host=vllm_host,
-            vllm_port=vllm_port,
             instructions=instructions,
         )
 
@@ -116,8 +118,19 @@ class Watcher:
             # Convert frames to base64
             base64_frames = self._frames_to_base64(frames)
 
-            # Create video URL with proper format for vLLM
-            encoded_video = f"data:video/jpeg;base64,{','.join(base64_frames)}"
+            # Create content with multiple images for OpenAI
+            content = [
+                {"type": "text", "text": self.instructions_prompt}
+            ]
+            
+            # Add each frame as a separate image
+            for base64_frame in base64_frames:
+                content.append({
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_frame}"
+                    }
+                })
 
             # Create message with instructions
             messages = [
@@ -127,26 +140,29 @@ class Watcher:
                 },
                 {
                     "role": "user",
-                    "content": [
-                        {"type": "video_url", "video_url": {"url": encoded_video}},
-                        {"type": "text", "text": self.instructions_prompt},
-                    ],
+                    "content": content,
                 },
             ]
 
-            # Send to vLLM server with proper mm_processor_kwargs and guided_json
-            response = self.client.chat.completions.create(
+            # # Send to OpenAI API
+            # response = self.qwen_client.chat.completions.create(
+            #     model=self.model_name,
+            #     messages=messages,
+            #     temperature=0.1,
+            #     max_tokens=512,
+            #     response_format={"type": "json_object"},
+            # )
+
+
+            # Send to QWen API
+            response = self.qwen_client.chat.completions.create(
                 model=self.model_name,
                 messages=messages,
                 temperature=0.1,
                 max_tokens=512,
-                extra_body={
-                    "mm_processor_kwargs": {
-                        "fps": fps or [self._calculate_fps(frames)]
-                    },
-                    "guided_json": self.json_schema,
-                },
+                response_format={"type": "json_object"},
             )
+            logger.info("OpenAI response", response=response)
             
             parsed_response = WatcherResponse.model_validate_json(
                 response.choices[0].message.content

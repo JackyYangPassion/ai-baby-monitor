@@ -6,40 +6,6 @@ services:
     networks:
       - app-network
 
-  vllm:
-    image: vllm/vllm-openai:v0.8.4
-    command: >
-      --model ${LLM_MODEL_NAME}
-      --host 0.0.0.0
-      --port ${VLLM_PORT}
-      --enable-prefix-caching
-      --quantization awq_marlin
-      --limit-mm-per-prompt image=5,video=5
-    ports:
-      - "${VLLM_PORT}:${VLLM_PORT}"
-    environment:
-      - VLLM_USE_V1=1
-      # - HUGGING_FACE_HUB_TOKEN=${HUGGING_FACE_HUB_TOKEN}
-    volumes:
-      - ~/.cache/huggingface:/root/.cache/huggingface
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1 # Request 1 GPU
-              capabilities: [gpu]
-    # vLLM takes a while to start up
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-    ipc: host
-    restart: unless-stopped
-    networks:
-      - app-network
-
   python-base:
     build:
       context: .
@@ -49,8 +15,6 @@ services:
     depends_on:
       redis:
         condition: service_started
-      vllm:
-        condition: service_healthy
     restart: unless-stopped
     networks:
       - app-network
@@ -58,13 +22,14 @@ services:
       - ./scripts:/app/scripts
       - ./configs:/app/configs
       - ./src:/app/src
+      - ./assets:/app/assets
 
   stream_to_redis:
     extends:
       service: python-base
     command: >
       sh -c "
-      uv run python scripts/stream_to_redis.py --config-file configs/living_room.yaml
+      uv run python scripts/stream_to_redis.py --config-file configs/living_room.yaml --demo
       "
 
   streamlit_viewer:

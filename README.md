@@ -1,10 +1,10 @@
-# 👶🧠 AI Baby Monitor (Local Video‑LLM Nanny)
+# 👶🧠 AI Baby Monitor (OpenAI GPT-4o-mini Nanny)
 
 [![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) [![DeepWiki](https://img.shields.io/badge/DeepWiki-zeenolife%2Fai--baby--monitor-blue.svg?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAyCAYAAAAnWDnqAAAAAXNSR0IArs4c6QAAA05JREFUaEPtmUtyEzEQhtWTQyQLHNak2AB7ZnyXZMEjXMGeK/AIi+QuHrMnbChYY7MIh8g01fJoopFb0uhhEqqcbWTp06/uv1saEDv4O3n3dV60RfP947Mm9/SQc0ICFQgzfc4CYZoTPAswgSJCCUJUnAAoRHOAUOcATwbmVLWdGoH//PB8mnKqScAhsD0kYP3j/Yt5LPQe2KvcXmGvRHcDnpxfL2zOYJ1mFwrryWTz0advv1Ut4CJgf5uhDuDj5eUcAUoahrdY/56ebRWeraTjMt/00Sh3UDtjgHtQNHwcRGOC98BJEAEymycmYcWwOprTgcB6VZ5JK5TAJ+fXGLBm3FDAmn6oPPjR4rKCAoJCal2eAiQp2x0vxTPB3ALO2CRkwmDy5WohzBDwSEFKRwPbknEggCPB/imwrycgxX2NzoMCHhPkDwqYMr9tRcP5qNrMZHkVnOjRMWwLCcr8ohBVb1OMjxLwGCvjTikrsBOiA6fNyCrm8V1rP93iVPpwaE+gO0SsWmPiXB+jikdf6SizrT5qKasx5j8ABbHpFTx+vFXp9EnYQmLx02h1QTTrl6eDqxLnGjporxl3NL3agEvXdT0WmEost648sQOYAeJS9Q7bfUVoMGnjo4AZdUMQku50McDcMWcBPvr0SzbTAFDfvJqwLzgxwATnCgnp4wDl6Aa+Ax283gghmj+vj7feE2KBBRMW3FzOpLOADl0Isb5587h/U4gGvkt5v60Z1VLG8BhYjbzRwyQZemwAd6cCR5/XFWLYZRIMpX39AR0tjaGGiGzLVyhse5C9RKC6ai42ppWPKiBagOvaYk8lO7DajerabOZP46Lby5wKjw1HCRx7p9sVMOWGzb/vA1hwiWc6jm3MvQDTogQkiqIhJV0nBQBTU+3okKCFDy9WwferkHjtxib7t3xIUQtHxnIwtx4mpg26/HfwVNVDb4oI9RHmx5WGelRVlrtiw43zboCLaxv46AZeB3IlTkwouebTr1y2NjSpHz68WNFjHvupy3q8TFn3Hos2IAk4Ju5dCo8B3wP7VPr/FGaKiG+T+v+TQqIrOqMTL1VdWV1DdmcbO8KXBz6esmYWYKPwDL5b5FA1a0hwapHiom0r/cKaoqr+27/XcrS5UwSMbQAAAABJRU5ErkJggg==)](https://deepwiki.com/zeenolife/ai-baby-monitor)
 
 
 
-> **Your second pair of eyes, powered by local video LLMs. Because, you know... it does take a village.**
+> **Your second pair of eyes, powered by OpenAI GPT-4o-mini. Because, you know... it does take a village.**
 
 The **AI Baby Monitor** watches a video stream (webcam, RTSP camera,  …) and a simple list of safety rules. If a rule is broken it issues a *single* gentle beep so you can quickly glance over and check on your baby.
 
@@ -34,9 +34,9 @@ Obviously, I'm not going to put my child in danger just for the demo, so here're
 
 |                       |                                                                                                                 |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------|
-| 🛡️ **Private‑first**  | Everything runs locally; nothing ever leaves your network.                                                      |
-| ⚡  **Realtime-ish**   | Works on consumer GPUs at ~1 req/s.                                                                             |
-| 🦾 **Video LLM**      | Uses the [Qwen2.5 VL](https://huggingface.co/Qwen/Qwen2.5-VL-7B-Instruct-AWQ) by default, served through vLLM.  |
+| 🌐 **OpenAI Powered** | Uses OpenAI GPT-4o-mini for reliable video analysis with no local GPU requirements.                           |
+| ⚡  **Fast & Efficient** | Cloud-based inference means no local model loading delays.                                                    |
+| 🦾 **Vision AI**      | GPT-4o-mini's advanced vision capabilities for accurate baby monitoring.                                       |
 | 🔔 **One beep alert** | Deliberately minimal & quiet  —  just look when it beeps.                                                       |
 | 🖥 **Live dashboard** | Streamlit viewer shows the live stream + LLM reasoning logs in real time.                                       |
 | 📝 **Easy rules**     | "The baby shouldn’t climb out of the crib", "Baby should always be accompanied by adult" … just edit YAML.      |
@@ -46,25 +46,26 @@ Obviously, I'm not going to put my child in danger just for the demo, so here're
 
 ## 🚀 Quick start
 
-> **Prerequisites** • Docker + docker‑compose • One GPU • Python 3.12 with [uv](https://github.com/astral-sh/uv)
+> **Prerequisites** • Docker + docker‑compose • OpenAI API key • Python 3.12 with [uv](https://github.com/astral-sh/uv)
 
 ```bash
 # 1 — clone
 $ git clone https://github.com/zeenolife/ai-baby-monitor.git && cd ai-baby-monitor
 
-# 2 — copy .env.template into .env
-$ cp .env.template .env
+# 2 — copy env.template to .env and add your OpenAI API key
+$ cp env.template .env
+$ # Edit .env and add your OPENAI_API_KEY
 
-# 3 — build & start all services (Redis, vLLM, video streamer, Streamlit viewer)
+# 3 — build & start all services (Redis, video streamer, Streamlit viewer)
 $ docker compose up --build -d
 
-# 4 — start the watcher on the **host**. unfortunately playing sound in Docker container and propagating to host is really painful. so no docker compose here
+# 4 — start the watcher on the **host**. sound playback works better on host
 $ uv run scripts/run_watcher.py --config-file configs/living_room.yaml
 
 # 5 — open the dashboard 👉 http://localhost:8501. You can also open the dashboard on your phone http://{host_network_ip}:8501
 ```
 
-> **Heads‑up** The first run downloads the model (\~6 GB), builds docker image and may take a few minutes.
+> **Note** The first run to set up your OpenAI API key (\~6 GB), builds docker image and may take a few minutes.
 
 ---
 
@@ -84,7 +85,7 @@ instructions:          # natural‑language rules for the nanny model
 ```
 
 * **Multiple rooms**? Edit `docker-compose.yml` and create `stream_to_redis` per room. Pass in new room config to streamlit viewer. Spawn new `run_watcher.py` process on host for new room config. 
-* **Swap the model**? Set LLM_MODEL_NAME in .env. Check [vLLM supported models](https://docs.vllm.ai/en/latest/models/supported_models.html#list-of-multimodal-language-models)
+* **Different OpenAI model**? The system uses `gpt-4o-mini` by default. You can modify this in the watcher initialization.
 
 ---
 
@@ -94,7 +95,7 @@ instructions:          # natural‑language rules for the nanny model
 ---
 
 1. **`stream_to_redis.py`** captures frames and pushes them to Redis (short *realtime* & long *subsampled* frames queues).
-2. **`run_watcher.py`** pulls latest N frames, encodes instructions and frames into prompt and sends them to local vLLM server, receives structured JSON, writes logs & plays a beep if receives `should_alert = True`.
+2. **`run_watcher.py`** pulls latest N frames, encodes instructions and frames into prompt and sends them to OpenAI API, receives structured JSON, writes logs & plays a beep if receives `should_alert = True`.
 3. **Streamlit** live‑updates the latest frame + llm logs.
 
 ---

@@ -41,7 +41,7 @@ def display_sidebar(
             st.caption(f"Subsample rate: {selected_config.subsample_rate}")
         st.divider()
         with st.expander("LLM Model"):
-            st.caption(f"LLM Model: {os.getenv('LLM_MODEL_NAME')}")
+            st.caption(f"OpenAI Model: gpt-4o-mini")
 
 
 @st.cache_resource

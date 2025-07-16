@@ -143,9 +143,14 @@ if __name__ == "__main__":
         # Extract camera settings from config
         camera_uri = room_config.camera_uri
 
+        # # Override with demo if requested
+        # if args.demo:
+        #     camera_uri = "/Users/yangjiaqi/Documents/ForAIGC/BaseModel/AIApplication/ForVideo/DataSet/videos-0707/1.mov"
+        #     logger.info("Using demo video source", camera_uri=camera_uri)
+
         # Override with demo if requested
         if args.demo:
-            camera_uri = "assets/demo/demo.mp4"
+            camera_uri = "./assets/demo/demo.mp4"
             logger.info("Using demo video source", camera_uri=camera_uri)
 
         # Use the room name as the redis stream key
